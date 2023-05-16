@@ -18,6 +18,7 @@ class LoginExecutor:
 
     def login(self) -> requests.Session:
         login_response = self._send_login_request()
+        self._check_for_too_many_requests(login_response)
         self._check_for_captcha(login_response)
         login_response = self._enter_steam_guard_if_necessary(login_response)
         self._assert_valid_credentials(login_response)
@@ -80,6 +81,12 @@ class LoginExecutor:
             'remember_login': 'true',
             'donotcache': str(int(time.time() * 1000))
         }
+
+    @staticmethod
+    def _check_for_too_many_requests(login_response: requests.Response) -> None:
+        if login_response.reason() == 'Too Many Requests':
+            raise TooManyRequests(
+                'Too many login requests in a short time. Consider adding a timeout between your login requests')
 
     @staticmethod
     def _check_for_captcha(login_response: requests.Response) -> None:
